@@ -21,6 +21,7 @@ const SUPPORTED_BAUD_RATES: [u32; 13] = [
     74_880,
     115_200,
 ]; //list of baud rates the user can choose from
+const ROCKET_MODEL_PATH: &str = "RocketLowPoly.glb";
 
 fn main() {
     App::new()
@@ -172,7 +173,7 @@ fn setup_scene(
     //Create rocket model and add the rocket component for updating
     commands.spawn((
         SceneRoot(asset_server.load(
-            GltfAssetLabel::Scene(0).from_asset("Rocket Model High Poly.glb"),
+            GltfAssetLabel::Scene(0).from_asset(ROCKET_MODEL_PATH),
         )),
         Transform::from_xyz(0.0, 0.0, 0.0),
         Rocket,
