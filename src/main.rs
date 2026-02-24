@@ -1,5 +1,5 @@
 use serialport5::{self, SerialPortBuilder, SerialPort};
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Read};
 use serde::{Deserialize, Serialize};
 use bevy::prelude::*;
 use bevy_egui::{ EguiContexts, EguiPlugin, EguiPrimaryContextPass, EguiStartupSet, egui};
@@ -34,7 +34,7 @@ fn main() {
         .add_systems(Update, (
             read_line,
             update_rocket_orientation
-        ).chain().run_if(in_state(AppState::Monitoring))) //read data from serial port and update rocket model every frame
+        ).run_if(in_state(AppState::Monitoring))) //read data from serial port and update rocket model every frame
         .add_systems(EguiPrimaryContextPass, (
             ui_system_main,
         ))//main ui system for serial port selection, baud rate selection, and starting the serial monitor
@@ -104,7 +104,7 @@ struct CurrentData {
 //resource struct that holds the serial port and reader for reading from the serial port
 #[derive(Resource)]
 struct SerialMonitorTools {
-    reader: BufReader<SerialPort>,
+    port: SerialPort,
 }
 
 //marker component for rocket model
@@ -152,7 +152,7 @@ fn setup_scene(
     //import 3d model of rocket and add it to the scene with a Rocket component included for querying later
 
     //default camera distance from world origin
-    let camera_distance = 2.0;
+    let camera_distance = 1.0;
 
     //create camera at about (5, 5, 5) looking at the origin with up being the Y axis
     commands.spawn((
@@ -191,11 +191,10 @@ fn setup_serial_monitor(
         .baud_rate(selected_port.baud_rate)
         .open(&selected_port.port_name)
         .unwrap();
-    let reader = BufReader::new(port);
 
     //insert serial monitor tools resource
     commands.insert_resource(SerialMonitorTools {
-        reader,
+        port,
     });
 
     //insert current data resource with initial values
@@ -215,21 +214,26 @@ fn read_line(
     mut serial_tools: ResMut<SerialMonitorTools>,
     mut current_data: ResMut<CurrentData>,
 ) {
-    //create string to hold the line read from the reader
-    let mut string = String::new();
-    let read_line = serial_tools.reader.read_line(&mut string);
-    //todo: make a file when starting the app that each incoming line will be written to along with a timestamp
-    match read_line {
-        Ok(_) => {
-            //parse the line into a json, then set the current data iteration to the data received, in the future this data will also be directly written to the log file
-            let data_line: ArduinoData = serde_json::from_str(&string).unwrap();
+
+    let mut buffer = [0; 128]; //128 byte buffer that the reader will fill every frame
+    //optimally this entire thing would be its own thread started when monitoring state is entered but i dont know enough about rust multithreading for that so we will still lose some data since the frame time is about 60hz or 7-8ish ms
+    match serial_tools.port.read(&mut buffer) {
+        Ok(bytes_read) => {
+            let data = String::from_utf8_lossy(&buffer[..bytes_read]);
+            //lets get the last line and and serde it and dump the rest into the log file
+
+            //pretend like we wrote that to a log file and continue
+            let last_newline = data.rfind('\n').unwrap_or(0);
+            let second_to_last_newline = data[..last_newline].rfind('\n').unwrap_or(std::usize::MAX);
+            //sometimes we dont happen to catch enough data to get a full line and in that case we just wait until the next frame
+            if last_newline == 0 || second_to_last_newline == std::usize::MAX {
+                return;
+            }
+            let data_line: ArduinoData = serde_json::from_str(&data[second_to_last_newline+1..last_newline]).unwrap();
             current_data.quat = Quat::from_xyzw(data_line.x, data_line.y, data_line.z, data_line.w);
             current_data.time = data_line.time;
-            // dbg!(current_data);
         }
-        //dont panic if it times out usually just mean the reader buffer is full and its causing lag im pretty sure idk
         Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => (),
-        //any other error is a real issue and we should immediately panic
         Err(e) => panic!("Error reading from serial port: {:?}", e),
     }
 }

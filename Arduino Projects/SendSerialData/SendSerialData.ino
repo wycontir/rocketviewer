@@ -1,7 +1,7 @@
 #include <quaternion_type.h>
 
 //placeholder for actual telemetry data, will be edited each loop to emulate new data
-quat_t q1 = { 1, 0, 0, 0 };
+quat_t q1 = { 0, 1, 0, 0 };
 float i = 1.0;
 
 void setup() {

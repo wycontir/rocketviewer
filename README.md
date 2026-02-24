@@ -26,4 +26,4 @@ This should work on any system that currently has something printing json lines 
 
 ## Issues
 
-currently reading each line using a buffered reader which causes massive lag spikes every so often, this will need to be fixed in the future
+
