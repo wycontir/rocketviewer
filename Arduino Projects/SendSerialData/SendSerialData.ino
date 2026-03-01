@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include <quaternion_type.h>
 
 //placeholder for actual telemetry data, will be edited each loop to emulate new data
@@ -6,7 +7,7 @@ float i = 1.0;
 
 void setup() {
   //open serial port at 9600 baud
-  Serial.begin(9600);
+  Serial.begin(115200);
 }
 
 

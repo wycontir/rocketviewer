@@ -1,0 +1,120 @@
+{
+  "asset": {
+    "generator": "Khronos glTF Blender I/O v5.0.21",
+    "version": "2.0"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "mesh": 0,
+      "name": "Circle",
+      "rotation": [
+        0,
+        -0.7071068286895752,
+        0.7071068286895752,
+        1.1520233300643667e-7
+      ],
+      "scale": [
+        0.040492426604032516,
+        0.040492426604032516,
+        0.040492426604032516
+      ],
+      "translation": [
+        0,
+        0,
+        -0.45885178446769714
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Circle",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "indices": 3
+        }
+      ]
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 1248,
+      "max": [
+        2.854133129119873,
+        0.8892378807067871,
+        2.8536946773529053
+      ],
+      "min": [
+        -2.8506436347961426,
+        -32.0404052734375,
+        -2.8536946773529053
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 1248,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 1248,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 1962,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 14976,
+      "byteOffset": 0,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 14976,
+      "byteOffset": 14976,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 9984,
+      "byteOffset": 29952,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 3924,
+      "byteOffset": 39936,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "RocketLowPoly_data.bin",
+      "byteLength": 43860
+    }
+  ]
+}
