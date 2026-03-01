@@ -1,4 +1,4 @@
-use serialport5::{self, SerialPortBuilder, SerialPort};
+use serial2::SerialPort;
 use std::io::{BufRead, BufReader, Read};
 use serde::{Deserialize, Serialize};
 use bevy::prelude::*;
@@ -120,10 +120,10 @@ fn setup(
     mut commands: Commands,
 ) {
     //get list of serial ports and a list of their names
-    let ports = serialport5::available_ports().unwrap();
+    let ports = SerialPort::available_ports().unwrap();
     let mut port_names = vec![];
     for port in ports {
-        port_names.push(port.port_name);
+        port_names.push(port.display().to_string());
     }
 
     let mut selection = SerialMonitorSelection {
@@ -187,10 +187,7 @@ fn setup_serial_monitor(
     selected_port: Res<SerialMonitorSelection>,
 ) {
     //start port with the name and baud rate that is currently selected in the SerialMonitorSelection resource
-    let port = SerialPortBuilder::new()
-        .baud_rate(selected_port.baud_rate)
-        .open(&selected_port.port_name)
-        .unwrap();
+    let port = SerialPort::open(selected_port.port_name.clone(), selected_port.baud_rate).unwrap();
 
     //insert serial monitor tools resource
     commands.insert_resource(SerialMonitorTools {
@@ -215,11 +212,15 @@ fn read_line(
     mut current_data: ResMut<CurrentData>,
 ) {
 
-    let mut buffer = [0; 128]; //128 byte buffer that the reader will fill every frame
+    let mut buffer = [0; 256]; //256 byte buffer that the reader will fill every frame
     //optimally this entire thing would be its own thread started when monitoring state is entered but i dont know enough about rust multithreading for that so we will still lose some data since the frame time is about 60hz or 7-8ish ms
+    
     match serial_tools.port.read(&mut buffer) {
         Ok(bytes_read) => {
             let data = String::from_utf8_lossy(&buffer[..bytes_read]);
+            if data.contains("Failed") {
+                panic!("Restart the esp32");
+            }
             //lets get the last line and and serde it and dump the rest into the log file
 
             //pretend like we wrote that to a log file and continue
@@ -229,13 +230,14 @@ fn read_line(
             if last_newline == 0 || second_to_last_newline == std::usize::MAX {
                 return;
             }
-            let data_line: ArduinoData = serde_json::from_str(&data[second_to_last_newline+1..last_newline]).unwrap();
+            let data_line: ArduinoData = serde_json::from_str(&data[second_to_last_newline+1..last_newline]).unwrap_or(ArduinoData { x: 0.0, y: 0.0, z: 0.0, w: 0.0, time: 0 });
             current_data.quat = Quat::from_xyzw(data_line.x, data_line.y, data_line.z, data_line.w);
             current_data.time = data_line.time;
         }
         Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => (),
         Err(e) => panic!("Error reading from serial port: {:?}", e),
     }
+    serial_tools.port.discard_buffers().unwrap();
 }
 
 //rocket model update system, runs every frame while in the monitoring state after the current data has been updated
@@ -308,10 +310,10 @@ fn ui_system_main(
                 //refresh ports button
                 if ui.button("Refresh Ports").clicked() {
                     //refresh list of ports
-                    let ports = serialport5::available_ports().unwrap();
+                    let ports = SerialPort::available_ports().unwrap();
                     let mut port_names = vec![];
                     for port in ports {
-                        port_names.push(port.port_name);
+                        port_names.push(port.display().to_string());
                     }
                     serial_port_list.ports = port_names;
                 }
@@ -354,10 +356,7 @@ fn serial_monitor() {
     let port_name = "COM3";
     let baud_rate = 9_600;
 
-    let port = SerialPortBuilder::new()
-        .baud_rate(baud_rate)
-        .open(&port_name)
-        .unwrap();
+    let port = SerialPort::open(port_name, baud_rate).unwrap();
 
     let mut reader = BufReader::new(port);
     let mut string = String::new();

@@ -19,7 +19,7 @@ float w = 0.0;
 
 void setup() {
   Serial.begin(9600);
-  while(!Serial) delay(10); //wait until serial console opens
+  while(!Serial) delay(100); //wait until serial console opens
   
   //Serial.println("Begin BNO085 Reporting");
 
